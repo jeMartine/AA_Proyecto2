@@ -45,7 +45,6 @@ def load_table(arch_name):
                 matriz[fila][colu] = data
                 #print(fila, colu, data)
 
-
 def mostrar_matriz():
     """
         Muestra el tablero de juego actual con los índices de fila y columna.
@@ -73,12 +72,50 @@ def mostrar_matriz():
                 linea += f"{valor:^3}"
         print(linea)
 
+def coordenadas():
+    valido = True
+    while valido:
+        print("Ingresa las coordenadas:")
+        fila = int(input("Fila: ")) - 1
+        column = int(input("Columna: ")) - 1
+
+        if matriz[fila][column] == 0:
+            print("Esta casilla no es válida.")
+            valido = True
+        else:
+            valido = False
+
+    return fila, column
+
+def revisar_moviento(fila, col, dir):
+    if dir == "w":
+        if matriz[fila+1][col] == 0:
+            return True
+    if dir == "s":
+        if matriz[fila-1][col] == 0:
+            return True
+    if dir == "a":
+        if matriz[fila][col-1] == 0:
+            return True
+    if dir == "d":
+        if matriz[fila][col+1] == 0:
+            return True
+    return False
+
+def juego():
+    estado_juego = True
+    while estado_juego:
+        mostrar_matriz()
+        print("Juega tu turno.")
+
+        print(coordenadas())
+
 if __name__ == '__main__':
 
-    entrada = sys.argv[1]
+    entrada = sys.argv
     if len(entrada) == 0:
         print("Recuerde: python interfaz.py <archivo de entrada>")
     else:
-        load_table(entrada)
-        mostrar_matriz()
+        load_table(entrada[1])
+        juego()
     
