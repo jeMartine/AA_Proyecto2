@@ -1,6 +1,30 @@
 import sys
+from colorama import Fore, Style, init
+
+init(autoreset=True)
+
+colores_neg = {
+    -1: Fore.BLUE,
+    -2: Fore.RED,
+    -3: Fore.GREEN,
+    -4: Fore.CYAN,
+    -5: Fore.MAGENTA,
+    -6: Fore.YELLOW,
+}
+
+colores_pos = {
+    1: Fore.BLUE,
+    2: Fore.RED,
+    3: Fore.GREEN,
+    4: Fore.CYAN,
+    5: Fore.MAGENTA,
+    6: Fore.YELLOW,
+}
 
 matriz = []
+coordenadas_usdadas = []
+num_conectados = 0
+num_iniciales = 0
 
 
 def load_cero_in_matriz(filas, columnas):
@@ -27,7 +51,8 @@ def load_table(arch_name):
         2,2,2
         3,3,3
     """
-    
+    global num_iniciales
+
     with open(arch_name, 'r') as f:
         linea_dimensiones = f.readline().strip().replace(" ", "")
         filas = int(linea_dimensiones.split(",")[0])
@@ -43,7 +68,8 @@ def load_table(arch_name):
                 data = int(line.split(",")[2])
 
                 matriz[fila][colu] = data
-                #print(fila, colu, data)
+                num_iniciales += 1
+        num_iniciales /= 2
 
 def mostrar_matriz():
     """
@@ -51,7 +77,8 @@ def mostrar_matriz():
 
         La función imprime la matriz del tablero de juego, donde se muestra el valor de cada celda.
         Las filas y columnas se indexan a partir de 1. Las celdas con valor 0 se muestran como 
-        guiones bajos ('_'), mientras que los demás valores se muestran tal cual.
+        guiones bajos ('_'), mientras que los valores positivos se muestran con el color correspondiente y
+        si es negativo se muestra un # con el color correspondiente al número negativo.
     """
 
     print("\nTablero de juego:")
@@ -68,47 +95,134 @@ def mostrar_matriz():
         for valor in fila:
             if valor == 0:
                 linea += " _ "
+            elif valor > 0:
+                color = colores_pos.get(valor, Fore.WHITE)
+                linea += f"{color}{valor:^3}{Style.RESET_ALL}"
             else:
-                linea += f"{valor:^3}"
+                #Imprime # del color de acuerdo al valor para mostrar la conexión
+                color = colores_neg.get(valor, Fore.WHITE)
+                linea += f"{color} # {Style.RESET_ALL}"
+
         print(linea)
 
 def coordenadas():
-    valido = True
-    while valido:
-        print("Ingresa las coordenadas:")
-        fila = int(input("Fila: ")) - 1
-        column = int(input("Columna: ")) - 1
+    """
+        Pide al usuario que ingrese las coordenadas de una celda en el tablero de juego.
 
-        if matriz[fila][column] == 0:
-            print("Esta casilla no es válida.")
-            valido = True
-        else:
-            valido = False
+        La función verifica que las coordenadas sean válidas y que la celda no esté vacía ni
+        haya sido utilizada previamente. Si las coordenadas son válidas, devuelve la fila y la
+        columna como enteros. Si no lo son, imprime un mensaje de error y vuelve a pedir las
+        coordenadas.
 
-    return fila, column
+        Retorna:
+            tuple: (int, int), donde el primer elemento es la fila y el segundo es la columna
+    """
+    while True:
+        try:
+            print("Ingresa las coordenadas:")
+            fila = int(input("Fila: ")) - 1
+            col = int(input("Columna: ")) - 1
 
-def revisar_moviento(fila, col, dir):
+            if 0 <= fila < len(matriz) and 0 <= col < len(matriz[0]):
+                if matriz[fila][col] != 0 and (fila, col) not in coordenadas_usdadas:
+                    coordenadas_usdadas.append((fila, col))
+                    return fila, col
+                else:
+                    print("Esta casilla no es válida.")
+            else:
+                print("Coordenadas fuera de rango.")
+        except ValueError:
+            print("Por favor ingresa números válidos.")
+
+
+def revisar_moviento(fila, col, dir, dato_selec):
+    """
+        Revisa si el movimiento en la dirección dada es válido. Si lo es, actualiza la
+        matriz con el valor de la celda seleccionada y devuelve True y las nuevas
+        coordenadas. Si no lo es, devuelve False y las coordenadas no cambian.
+
+        Parámetros:
+            fila (int): Fila de la celda actual
+            col (int): Columna de la celda actual
+            dir (str): Dirección del movimiento (w, a, s, d)
+            dato_selec (int): Valor de la celda seleccionada
+
+        Retorna:
+            tuple: (bool, int, int), donde el primer elemento es un booleano que indica
+            si se ha llegado al otro elemento, y los otros dos elementos son las nuevas
+            coordenadas
+    """
+    nueva_fila, nueva_col = fila, col
+
     if dir == "w":
-        if matriz[fila+1][col] == 0:
-            return True
-    if dir == "s":
-        if matriz[fila-1][col] == 0:
-            return True
-    if dir == "a":
-        if matriz[fila][col-1] == 0:
-            return True
-    if dir == "d":
-        if matriz[fila][col+1] == 0:
-            return True
-    return False
+        nueva_fila -= 1
+    elif dir == "s":
+        nueva_fila += 1
+    elif dir == "a":
+        nueva_col -= 1
+    elif dir == "d":
+        nueva_col += 1
+    else:
+        print("Dirección no válida.")
+        return True, fila, col
+
+    if 0 <= nueva_fila < len(matriz) and 0 <= nueva_col < len(matriz[0]):
+        if matriz[nueva_fila][nueva_col] == 0:
+            matriz[nueva_fila][nueva_col] = -1 * dato_selec
+            return True, nueva_fila, nueva_col
+        elif matriz[nueva_fila][nueva_col] == dato_selec and (nueva_fila, nueva_col) not in coordenadas_usdadas:
+            return False, nueva_fila, nueva_col
+
+        else:
+            print("Movimiento no válido.")
+    else:
+        print("Movimiento fuera de los límites.")
+
+    return True, fila, col
 
 def juego():
+    """
+        Controla el flujo del juego principal. Muestra el tablero, recibe las 
+        coordenadas del jugador y permite el movimiento de las piezas en el 
+        tablero. El juego continúa hasta que todas las piezas estén conectadas 
+        correctamente.
+
+        Durante el turno del jugador, el tablero se muestra y el jugador ingresa 
+        una dirección para mover una pieza seleccionada. Si las piezas se conectan 
+        correctamente, el juego termina con un mensaje de victoria.
+
+        Utiliza las funciones:
+        - mostrar_matriz(): para mostrar el estado actual del tablero.
+        - coordenadas(): para obtener las coordenadas de la celda seleccionada.
+        - revisar_moviento(): para verificar y realizar movimientos en el tablero.
+    """
+
     estado_juego = True
+    global num_conectados
     while estado_juego:
         mostrar_matriz()
         print("Juega tu turno.")
+        fila, col = coordenadas()
+        dato_selec= matriz[fila][col]
+        estado = True
 
-        print(coordenadas())
+        while estado:
+            mostrar_matriz()
+            print("Mover con: a (izq), w (arriba), s (abajo), d (der)")
+            
+            mov = input(": ").lower()
+            estado, fila, col= revisar_moviento(fila, col, mov, dato_selec)
+
+            if estado!= True:
+                print(f"Se han conectado las casillas de {dato_selec}")
+                num_conectados += 1
+                coordenadas_usdadas.append((fila, col))
+
+                if num_conectados == num_iniciales:
+                    print("¡Has ganado!")
+                    estado_juego = False
+
+
 
 if __name__ == '__main__':
 
