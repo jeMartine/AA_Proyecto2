@@ -4,23 +4,18 @@ import copy
 init(autoreset=True)
 
 class Tablero:
-    colores_neg = {
-        -1: Fore.BLUE,
-        -2: Fore.RED,
-        -3: Fore.GREEN,
-        -4: Fore.CYAN,
-        -5: Fore.MAGENTA,
-        -6: Fore.YELLOW,
-    }
+    colores_disponibles = [
+        Fore.BLUE, Fore.RED, Fore.GREEN, Fore.CYAN, Fore.MAGENTA, Fore.YELLOW,
+        Fore.LIGHTBLUE_EX, Fore.LIGHTRED_EX, Fore.LIGHTGREEN_EX,
+        Fore.LIGHTCYAN_EX, Fore.LIGHTMAGENTA_EX, Fore.LIGHTYELLOW_EX,
+        Fore.WHITE, Fore.LIGHTWHITE_EX
+    ]
 
-    colores_pos = {
-        1: Fore.BLUE,
-        2: Fore.RED,
-        3: Fore.GREEN,
-        4: Fore.CYAN,
-        5: Fore.MAGENTA,
-        6: Fore.YELLOW,
-    }
+    def obtener_color(self, valor):
+        if valor == 0:
+            return Fore.WHITE
+        index = abs(valor) - 1
+        return self.colores_disponibles[index % len(self.colores_disponibles)]
 
     def __init__(self):
         self.matriz = []
@@ -149,13 +144,12 @@ class Tablero:
                 if valor == 0:
                     linea += " _ "
                 elif valor > 0:
-                    color = self.colores_pos.get(valor, Fore.WHITE)
+                    color = self.obtener_color(valor)
                     linea += f"{color}{valor:^3}{Style.RESET_ALL}"
                 else:
-                    color = self.colores_neg.get(valor, Fore.WHITE)
+                    color = self.obtener_color(valor)
                     linea += f"{color} # {Style.RESET_ALL}"
             print(linea)
-
     def load_cero_in_matriz(self, filas, columnas):
         self.matriz = [[0 for _ in range(columnas)] for _ in range(filas)]
 

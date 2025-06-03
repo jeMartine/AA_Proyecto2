@@ -132,10 +132,36 @@ def salidas_pares(bloqueados, copia, pares):
             tupla_bloqueo = bloquear_menor_heuristica(fin, bloqueos)
 
             if tupla_bloqueo is not None and not copia.esta_conectado(dat):
+                desespero = revisar_movimiento_desde_bloqueo(copia.matriz, tupla_bloqueo[1])
+                if desespero is not None:
+                    bloqueados.append(desespero)
                 bloqueados.append(tupla_bloqueo)
                 mover_un_paso_atras(pares, tupla_bloqueo[0])
                 return True
     return False
+
+def revisar_movimiento_desde_bloqueo(tablero, bloqueado):
+    f,c = bloqueado
+    fila = len(tablero)
+    colu = len(tablero[0])
+    aux = []
+    salidas =0
+    for df, dc in MOVIMIENTOS.values():
+        nf, nc = f + df, c + dc
+        if (0 <= nf < fila and 0 <= nc < colu and ((nf, nc)) is not bloqueado):# revisar limites
+            dato_revisar = tablero[nf][nc]
+            if dato_revisar == 0:
+                salidas +=1
+
+            if dato_revisar < 0:
+                aux.append((abs(dato_revisar),((nf,nc))))
+                print(f"Siguiente bloqueado dato {dato_revisar} por camino {((nf,nc))}")
+
+    if salidas == 0:
+        print(f"Retorno la maricada que no me sirve {aux[0]}")
+        return aux[0]
+
+    return None
 
 def bloquear_menor_heuristica(fin, bloqueos):
     for bloqueos_aux, libre in bloqueos:
@@ -155,6 +181,7 @@ def bloquear_menor_heuristica(fin, bloqueos):
     return None
 
 def mover_un_paso_atras(pares, dato_objetivo):
+    print("Se mueve un paso atrás")
     for i in range(1, len(pares)):  # desde 1 para no mover si ya está al principio
         if pares[i][0] == dato_objetivo:
             par = pares.pop(i)
@@ -162,11 +189,14 @@ def mover_un_paso_atras(pares, dato_objetivo):
             break
 
 def mover_adelante(pares, dato_objetivo):
+    print("Se mueve un paso atrás")
+
     for i in range(1, len(pares)):  # desde 1 para no mover si ya está al principio
         if pares[i][0] == dato_objetivo:
             par = pares.pop(i)
             pares.insert(i + 1, par)
             break
+    print(pares)
 
 def jugar(arch_name):
     tablero_auto = Tablero()
@@ -179,6 +209,7 @@ def jugar(arch_name):
     print(pares)
 
     bloqueados=[]
+    intentos = 0
 
     i=0
 
@@ -200,7 +231,8 @@ def jugar(arch_name):
 
             if i>0:
                 i=0
-                
+                mover_adelante(pares, dato)
+
                 tablero_temp = copy.deepcopy(tablero_auto)
                 print(f"Bloqueados {bloqueados}")
                 continue
@@ -226,10 +258,15 @@ def jugar(arch_name):
         i += 1  # pasa al siguiente dato
 
         if salidas_pares(bloqueados, tablero_temp, pares):
+            if intentos==3:
+                mover_adelante(pares, dato)
+                print(pares)
+                intentos=0
             print(f"Pares: {pares}")
             print(f"Bloqueados: {bloqueados}")
             tablero_temp = copy.deepcopy(tablero_auto)
             i=0
+            intentos +=1
 
 
         input()
