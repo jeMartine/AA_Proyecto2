@@ -327,4 +327,3 @@ if __name__ == '__main__':
             jugar(entrada[1])
         else:
             juego(entrada[1])
-    
