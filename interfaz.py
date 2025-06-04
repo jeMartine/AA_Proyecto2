@@ -3,6 +3,8 @@ from Tablero import *
 import heapq
 from collections import deque, OrderedDict
 import copy
+from itertools import permutations
+
 
 
 
@@ -36,28 +38,12 @@ def encontrar_pares(tablero):
                     posiciones[val] = []
                 posiciones[val].append((i, j))
 
-    #return posiciones
-    return ordenar_pares(posiciones)
+    return permutaciones(posiciones)
 
-def ordenar_pares(pares):
-    heapPares=[]
+def permutaciones(diccionario):
+    pares = [(k, diccionario[k]) for k in diccionario]
+    return list(permutations(pares))
 
-    for dato, coord in pares.items():
-        inicio, fin = coord
-        h = heuristica(inicio, fin)
-
-        heapq.heappush(heapPares, (h, dato, coord))
-    
-    pares_ordenados = []
-    elementos_ordenados = heapq.nsmallest(len(heapPares), heapPares)
-
-    for elemento in elementos_ordenados:
-        h, dato, coord = elemento
-        pares_ordenados.append((dato, coord))
-
-
-    #print(f"Pares ordenados {pares_ordenados}")
-    return pares_ordenados
 
 def revisar_salidas(dat, tablero, coord):
     f, c = coord
@@ -81,7 +67,7 @@ def revisar_salidas(dat, tablero, coord):
     return bloqueados
 
 
-def astar(tablero_original, dato, pares, bloqueados,  inicio, fin):
+def astar(tablero_original, dato, bloqueados,  inicio, fin):
     heap = [] #lista abierta donde almaceno nuevos nodos                   
     heapq.heappush(heap, (0 + heuristica(inicio, fin), 0, inicio, [])) # f, g , nodo_inicial, lista de movimientos
     visitados = set() #Lista con las posiciones visitadas (reconstruye el camino final)
@@ -121,13 +107,12 @@ def astar(tablero_original, dato, pares, bloqueados,  inicio, fin):
             
     return None  # No se encontró camino
 
-#Revvisar que en cada iteración, al menos cada número que deba ser conectado esté libre a su al rededor
+#Revisar que en cada iteración, al menos cada número que deba ser conectado esté libre a su al rededor
 
 def salidas_pares(bloqueados, copia, pares):
     for dat, (inicio, fin) in copy.deepcopy(pares):
         for punto in [inicio, fin]:
             bloqueos = revisar_salidas(dat, copia.matriz, punto)
-            #print(f"Dato {dat}, punto {punto}: {bloqueos}")
 
             tupla_bloqueo = bloquear_menor_heuristica(fin, bloqueos)
 
@@ -136,7 +121,6 @@ def salidas_pares(bloqueados, copia, pares):
                 if desespero is not None:
                     bloqueados.append(desespero)
                 bloqueados.append(tupla_bloqueo)
-                mover_un_paso_atras(pares, tupla_bloqueo[0])
                 return True
     return False
 
@@ -158,7 +142,6 @@ def revisar_movimiento_desde_bloqueo(tablero, bloqueado):
                 print(f"Siguiente bloqueado dato {dato_revisar} por camino {((nf,nc))}")
 
     if salidas == 0:
-        print(f"Retorno la maricada que no me sirve {aux[0]}")
         return aux[0]
 
     return None
@@ -180,99 +163,62 @@ def bloquear_menor_heuristica(fin, bloqueos):
         
     return None
 
-def mover_un_paso_atras(pares, dato_objetivo):
-    print("Se mueve un paso atrás")
-    for i in range(1, len(pares)):  # desde 1 para no mover si ya está al principio
-        if pares[i][0] == dato_objetivo:
-            par = pares.pop(i)
-            pares.insert(i + 1, par)
-            break
-
-def mover_adelante(pares, dato_objetivo):
-    print("Se mueve un paso atrás")
-
-    for i in range(1, len(pares)):  # desde 1 para no mover si ya está al principio
-        if pares[i][0] == dato_objetivo:
-            par = pares.pop(i)
-            pares.insert(i + 1, par)
-            break
-    print(pares)
 
 def jugar(arch_name):
-    tablero_auto = Tablero()
-    tablero_auto.load_table(arch_name)
-
-    tablero_temp=copy.deepcopy(tablero_auto)
-
-    pares = encontrar_pares(tablero_auto)
-
-    print(pares)
-
-    bloqueados=[]
-    intentos = 0
-
-    i=0
-
-    while i<len(pares):
-
-        
-        dato, coords = pares[i]
-        inicio, fin = coords
-        copia = copy.deepcopy(tablero_temp.matriz)
-
-        #recalcular camino
-        camino = astar(copia, dato, pares, bloqueados, inicio, fin)
-
-        print(f"Calculando camino con {dato}")
+    tablero_original = Tablero()
+    tablero_original.load_table(arch_name)
 
 
-        if not camino:
-            print(f"No se encontró camino para {dato}")
+    todas_permutaciones = encontrar_pares(tablero_original)
 
-            if i>0:
-                i=0
-                mover_adelante(pares, dato)
+    for perm_index, perm in enumerate(todas_permutaciones):
+        print(f"\nProbando permutación {perm_index + 1} de {len(todas_permutaciones)}:\n{perm}\n")
 
-                tablero_temp = copy.deepcopy(tablero_auto)
-                print(f"Bloqueados {bloqueados}")
-                continue
-            else:
-                print(f"Primer dato {dato} no tiene camino.")
-                i += 1
-                continue
-                
-        
-
-        # Si hay camino, ejecútalo
-        fila, col = inicio
-        tablero_temp.coordenadas_usdadas.append(inicio)
-
-        for mov in camino:
-            direccion = DIR_INVERSA[mov]
-            _, fila, col = tablero_temp.revisar_moviento(fila, col, direccion, dato)
-        
-        tablero_temp.mostrar_matriz()
-
-        print(f"Se han conectado las casillas de {dato}")
-        tablero_temp.aumentar_conectados(dato, fin[0], fin[1])
-        i += 1  # pasa al siguiente dato
-
-        if salidas_pares(bloqueados, tablero_temp, pares):
-            if intentos==3:
-                mover_adelante(pares, dato)
-                print(pares)
-                intentos=0
-            print(f"Pares: {pares}")
-            print(f"Bloqueados: {bloqueados}")
-            tablero_temp = copy.deepcopy(tablero_auto)
-            i=0
-            intentos +=1
+        pares = list(perm)  # Convertir la permutación a una lista de pares
+        tablero_temp = copy.deepcopy(tablero_original)
+        bloqueados = []
+        intentos = 0
+        i = 0
 
 
-        input()
+        while i < len(pares):
+            dato = pares[i][0]
+            inicio, fin = pares[i][1]
+            copia = copy.deepcopy(tablero_temp.matriz)
 
-    if tablero_temp.check_terminado():
-        print("¡Jugador sintético ha ganado!")
+            camino = astar(copia, dato, bloqueados, inicio, fin)
+
+            print(f"Calculando camino con {dato}")
+
+            if not camino:
+                print(f"No se encontró camino para {dato}")
+                break  # Esta permutación falla, pasamos a la siguiente
+
+            fila, col = inicio
+            tablero_temp.coordenadas_usdadas.append(inicio)
+
+            for mov in camino:
+                direccion = DIR_INVERSA[mov]
+                _, fila, col = tablero_temp.revisar_moviento(fila, col, direccion, dato)
+
+            tablero_temp.mostrar_matriz()
+            print(f"Se han conectado las casillas de {dato}")
+            tablero_temp.aumentar_conectados(dato, fin[0], fin[1])
+            i += 1
+
+            if salidas_pares(bloqueados, tablero_temp, pares):
+                if intentos == 10:
+                    print("Demasiados intentos, pasando a la siguiente permutación.")
+                    break
+                tablero_temp = copy.deepcopy(tablero_original)
+                i = 0
+                intentos += 1
+
+        if tablero_temp.check_terminado():
+            print("Jugador sintético ha ganado")
+            return  # Sale de la función tras encontrar una solución
+
+    print("No se encontró una solución válida.")
 
 
 
