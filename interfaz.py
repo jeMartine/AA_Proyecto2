@@ -1,5 +1,5 @@
 import sys
-from Tablero import *
+from tablero import *
 import heapq
 from collections import deque, OrderedDict
 import copy
@@ -25,7 +25,6 @@ DIR_INVERSA = {
 
 def heuristica(a, b):
     # Distancia de Manhattan
-    #print(f"Heuristica usada a: {a}, b:{b} = {abs(a[0] - b[0]) + abs(a[1] - b[1])}")
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
 def encontrar_pares(tablero):
@@ -102,9 +101,6 @@ def astar(tablero_original, dato, bloqueados,  inicio, fin):
                     nuevo_g = g + 1#Costo de 1 paso al pasar a la nueva posición
                     nuevo_f = nuevo_g + heuristica(nueva_pos, fin) #nuevo valor del nodo en el que me paro
                     heapq.heappush(heap, (nuevo_f, nuevo_g, nueva_pos, camino + [delta]))
-
-
-            
     return None  # No se encontró camino
 
 #Revisar que en cada iteración, al menos cada número que deba ser conectado esté libre a su al rededor
