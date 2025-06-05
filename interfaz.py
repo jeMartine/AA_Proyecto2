@@ -4,7 +4,7 @@ import heapq
 from collections import deque, OrderedDict
 import copy
 from itertools import permutations
-
+import time
 
 
 
@@ -164,22 +164,33 @@ def bloquear_menor_heuristica(fin, bloqueos):
     return None
 
 
-def jugar(arch_name):
+def jugar_sintetico(arch_name):
     tablero_original = Tablero()
     tablero_original.load_table(arch_name)
 
+    inicio = time.time()
+    tablero_original=jugar(tablero_original)
+    fin = time.time()
+
+    print(f"Tiempo de ejecución: {fin - inicio:.7f} segundos")
+    
+
+    if tablero_original is not None:
+        tablero_original.mostrar_matriz()
+        print("El jugador sintético ha encontrado una solución")
+
+    else:
+        print("No se encontró una solución válida.")
+
+def jugar(tablero_original):
 
     todas_permutaciones = encontrar_pares(tablero_original)
 
     for perm_index, perm in enumerate(todas_permutaciones):
-        print(f"\nProbando permutación {perm_index + 1} de {len(todas_permutaciones)}:\n{perm}\n")
-
         pares = list(perm)  # Convertir la permutación a una lista de pares
         tablero_temp = copy.deepcopy(tablero_original)
         bloqueados = []
-        intentos = 0
         i = 0
-
 
         while i < len(pares):
             dato = pares[i][0]
@@ -207,18 +218,13 @@ def jugar(arch_name):
             i += 1
 
             if salidas_pares(bloqueados, tablero_temp, pares):
-                if intentos == 10:
-                    print("Demasiados intentos, pasando a la siguiente permutación.")
-                    break
                 tablero_temp = copy.deepcopy(tablero_original)
                 i = 0
-                intentos += 1
 
         if tablero_temp.check_terminado():
-            print("Jugador sintético ha ganado")
-            return  # Sale de la función tras encontrar una solución
+            return  tablero_temp
 
-    print("No se encontró una solución válida.")
+    return None
 
 
 
@@ -270,6 +276,6 @@ if __name__ == '__main__':
         print("Recuerde: python interfaz.py <archivo de entrada>")
     else:
         if len(entrada)>2 and entrada[2]=="auto":
-            jugar(entrada[1])
+            jugar_sintetico(entrada[1])
         else:
             juego(entrada[1])
